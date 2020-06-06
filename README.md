@@ -43,7 +43,7 @@ Druid is a high performance real-time analytics database. Druid's main value add
 
 Druid is designed for workflows where fast queries and ingest really matter. Druid excels at powering UIs, running operational (ad-hoc) queries, or handling high concurrency. Consider Druid as an open source alternative to data warehouses for a variety of use cases.
 
-### Getting started
+### Getting started !!
 
 You can get started with Druid with our [quickstart](https://druid.apache.org/docs/latest/tutorials/quickstart.html).
 
