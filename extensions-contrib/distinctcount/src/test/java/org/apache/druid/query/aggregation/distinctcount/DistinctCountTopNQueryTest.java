@@ -138,12 +138,12 @@ public class DistinctCountTopNQueryTest extends InitializedNullHandlingTest
                 Arrays.<Map<String, Object>>asList(
                     ImmutableMap.of(
                         client_type, "iphone",
-                        "UV", 2L,
+                        "UV", 2,
                         "rows", 2L
                     ),
                     ImmutableMap.of(
                         client_type, "android",
-                        "UV", 1L,
+                        "UV", 1,
                         "rows", 1L
                     )
                 )
