@@ -77,14 +77,14 @@ public class NumberedOverwritePartialShardSpec implements PartialShardSpec
   }
 
   @Override
-  public ShardSpec complete(ObjectMapper objectMapper, int partitionId)
-  {
-    return new NumberedOverwriteShardSpec(partitionId, startRootPartitionId, endRootPartitionId, minorVersion);
-  }
-
-  @Override
   public Class<? extends ShardSpec> getShardSpecClass()
   {
     return NumberedOverwriteShardSpec.class;
+  }
+
+  @Override
+  public boolean useNonRootGenerationPartitionSpace()
+  {
+    return true;
   }
 }

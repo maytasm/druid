@@ -30,7 +30,7 @@ import java.util.Map;
 
 public class HashBasedNumberedPartialShardSpecTest
 {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = ShardSpecTestUtils.initObjectMapper();
 
   @Test
   public void testEquals()
@@ -73,5 +73,6 @@ public class HashBasedNumberedPartialShardSpecTest
     Assert.assertEquals(expected.getPartitionDimensions(), map.get("partitionDimensions"));
     Assert.assertEquals(expected.getBucketId(), map.get("bucketId"));
     Assert.assertEquals(expected.getNumBuckets(), map.get("numPartitions"));
+    Assert.assertEquals(expected.getBucketId(), map.get("bucketId"));
   }
 }

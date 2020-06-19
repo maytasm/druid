@@ -52,6 +52,7 @@ import org.apache.druid.timeline.partition.NoneShardSpec;
 import org.apache.druid.timeline.partition.PartialShardSpec;
 import org.apache.druid.timeline.partition.PartitionChunk;
 import org.apache.druid.timeline.partition.ShardSpec;
+import org.apache.druid.timeline.partition.SingleDimensionShardSpec;
 import org.joda.time.Interval;
 import org.joda.time.chrono.ISOChronology;
 import org.skife.jdbi.v2.Folder3;
@@ -810,16 +811,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       return null;
 
     } else {
-      //noinspection ConstantConditions
-      if (FluentIterable
-          .from(existingChunks)
-          .transformAndConcat(TimelineObjectHolder::getObject)
-          .anyMatch(chunk -> !chunk.getObject().getShardSpec().isCompatible(partialShardSpec.getShardSpecClass()))) {
-        // All existing segments should have a compatible shardSpec with partialShardSpec.
-        return null;
-      }
-
-      // max partitionId of the SAME shardSpec
+      // max partitionId of the shardSpecs which share the same partition space.
       SegmentIdWithShardSpec maxId = null;
 
       if (!existingChunks.isEmpty()) {
@@ -829,10 +821,10 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
         for (DataSegment segment : FluentIterable
             .from(existingHolder.getObject())
             .transform(PartitionChunk::getObject)
-            // Here we check only the segments of the same shardSpec to find out the max partitionId.
-            // Note that OverwriteShardSpec has the higher range for partitionId than others.
+            // Here we check only the segments of the shardSpec which shares the same partition space with the given
+            // partialShardSpec. Note that OverwriteShardSpec doesn't share the partition space with others.
             // See PartitionIds.
-            .filter(segment -> segment.getShardSpec().getClass() == partialShardSpec.getShardSpecClass())) {
+            .filter(segment -> segment.getShardSpec().sharePartitionSpace(partialShardSpec))) {
           // Don't use the stream API for performance.
           if (maxId == null || maxId.getShardSpec().getPartitionNum() < segment.getShardSpec().getPartitionNum()) {
             maxId = SegmentIdWithShardSpec.fromDataSegment(segment);
@@ -851,7 +843,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       }
 
       maxId = pendings.stream()
-                      .filter(id -> id.getShardSpec().getClass() == partialShardSpec.getShardSpecClass())
+                      .filter(id -> id.getShardSpec().sharePartitionSpace(partialShardSpec))
                       .max((id1, id2) -> {
                         final int versionCompare = id1.getVersion().compareTo(id2.getVersion());
                         if (versionCompare != 0) {
@@ -886,6 +878,20 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
         );
         return null;
       } else {
+        // SingleDimensionShardSpecs created in 0.18 or older versions can return
+        // SingleDimensionShardSpec.UNKNOWN_NUM_CORE_PARTITIONS in getNumCorePartitions(),
+        // which means it will use StringPartitionChunk to check the completeness of the core partition set.
+        // In this case, we cannot append since the appended segments will be ignored in the timeline.
+        // See StringPartitionChunk.abuts() for more details.
+        if (maxId.getShardSpec().getNumCorePartitions() == SingleDimensionShardSpec.UNKNOWN_NUM_CORE_PARTITIONS) {
+          log.warn(
+              " Cannot allocate new segment because of unknown core partition size of segment[%s], shardSpec[%s]",
+              maxId,
+              maxId.getShardSpec()
+          );
+          return null;
+        }
+
         final ShardSpec newShardSpec = partialShardSpec.complete(jsonMapper, maxId.getShardSpec());
         return new SegmentIdWithShardSpec(
             dataSource,

@@ -53,13 +53,21 @@ public interface PartialShardSpec
   ShardSpec complete(ObjectMapper objectMapper, @Nullable ShardSpec specOfPreviousMaxPartitionId);
 
   /**
-   * Creates a new shardSpec having the given partitionId.
-   */
-  ShardSpec complete(ObjectMapper objectMapper, int partitionId);
-
-  /**
    * Returns the class of the shardSpec created by this factory.
    */
   @JsonIgnore
   Class<? extends ShardSpec> getShardSpecClass();
+
+  /**
+   * Returns true if this partialShardSpec needs a partitionId of a non-root generation.
+   * Any partialShardSpec to overwrite a subset of segments in a time chunk such as
+   * {@link NumberedOverwritePartialShardSpec} should return true.
+   *
+   *
+   * @see PartitionIds
+   */
+  default boolean useNonRootGenerationPartitionSpace()
+  {
+    return false;
+  }
 }
