@@ -210,468 +210,144 @@ jobs:
       name: "(openjdk11) server module test (SQL Compatibility)"
       jdk: openjdk11
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 1"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 1"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
+      name: "(openjdk8) server module test (SQL Compatibility) 1"
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 1"
+      jdk: openjdk11
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 2"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 2"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
+      name: "(openjdk8) server module test (SQL Compatibility) 2"
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 2"
+      jdk: openjdk11
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 3"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 3"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
+      name: "(openjdk8) server module test (SQL Compatibility) 3"
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 3"
+      jdk: openjdk11
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 4"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 4"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
+      name: "(openjdk8) server module test (SQL Compatibility) 4"
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 4"
+      jdk: openjdk11
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 5"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 5"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
+      name: "(openjdk8) server module test (SQL Compatibility) 5"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 5"
       jdk: openjdk11
-
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 6"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 6"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
+      name: "(openjdk8) server module test (SQL Compatibility) 6"
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 6"
+      jdk: openjdk11
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 7"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 7"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
+      name: "(openjdk8) server module test (SQL Compatibility) 7"
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 7"
+      jdk: openjdk11
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 8"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 8"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
+      name: "(openjdk8) server module test (SQL Compatibility) 8"
 
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 8"
+      jdk: openjdk11
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 9"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 9"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
+      name: "(openjdk8) server module test (SQL Compatibility) 9"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 9"
       jdk: openjdk11
-
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
+      name: "(openjdk8) server module test 10"
 
     - <<: *test_server_module
-      name: "(openjdk11) server module test"
+      name: "(openjdk11) server module test 10"
       jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
-
-    - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+      name: "(openjdk8) server module test (SQL Compatibility) 10"
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
-
-    - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
-
-    - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_server_module
-      <<: *test_processing_module
-      name: "(openjdk8) server module test"
-      env:
-        - MAVEN_PROJECTS='server'
-
-    - <<: *test_server_module
-      name: "(openjdk11) server module test"
-      jdk: openjdk11
-
-    - &test_server_module_sqlcompat
-      <<: *test_server_module
-      name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_server_module_sqlcompat
-      name: "(openjdk11) server module test (SQL Compatibility)"
+      name: "(openjdk11) server module test (SQL Compatibility) 10"
       jdk: openjdk11
 
 # Travis CI only supports per build (and not per-job notifications): https://github.com/travis-ci/travis-ci/issues/9888
