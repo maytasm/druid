@@ -190,37 +190,24 @@ jobs:
         - travis_retry curl -o codecov.sh -s https://codecov.io/bash
         - travis_retry bash codecov.sh -X gcov
 
-    - <<: *test_processing_module
-      name: "(openjdk11) processing module test"
-      jdk: openjdk11
-
-    - &test_processing_module_sqlcompat
+    - &test_server_module
       <<: *test_processing_module
-      name: "(openjdk8) processing module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-      - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_processing_module_sqlcompat
-      name: "(openjdk11) processing module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_indexing_module
-      <<: *test_processing_module
-      name: "(openjdk8) indexing modules test"
+      name: "(openjdk8) server module test"
       env:
-      - MAVEN_PROJECTS='indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service'
+        - MAVEN_PROJECTS='server'
 
-    - <<: *test_indexing_module
-      name: "(openjdk11) indexing modules test"
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
       jdk: openjdk11
 
-    - &test_indexing_module_sqlcompat
-      <<: *test_indexing_module
-      name: "(openjdk8) indexing modules test (SQL Compatibility)"
-      before_script: *setup_sqlcompat
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-    - <<: *test_indexing_module_sqlcompat
-      name: "(openjdk11) indexing modules test (SQL Compatibility)"
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
       jdk: openjdk11
 
     - &test_server_module
@@ -236,208 +223,456 @@ jobs:
     - &test_server_module_sqlcompat
       <<: *test_server_module
       name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: *setup_sqlcompat
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
       name: "(openjdk11) server module test (SQL Compatibility)"
       jdk: openjdk11
 
-    - &test_other_modules
+    - &test_server_module
       <<: *test_processing_module
-      name: "(openjdk8) other modules test"
+      name: "(openjdk8) server module test"
       env:
-        - MAVEN_PROJECTS='!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console'
+        - MAVEN_PROJECTS='server'
 
-    - <<: *test_other_modules
-      name: "(openjdk11) other modules test"
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
       jdk: openjdk11
 
-    - &test_other_modules_sqlcompat
-      <<: *test_other_modules
-      name: "(openjdk8) other modules test (SQL Compatibility)"
-      before_script: *setup_sqlcompat
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-    - <<: *test_other_modules_sqlcompat
-      name: "(openjdk11) other modules test (SQL Compatibility)"
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
       jdk: openjdk11
 
-    - name: "web console"
-      install: skip
-      script:
-        - ${MVN} test -pl 'web-console'
-      after_success:
-        - (cd web-console && travis_retry npm run codecov)  # retry in case of network error
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
 
-    - name: "web console end-to-end test"
-      before_install: *setup_generate_license
-      install: web-console/script/druid build
-      before_script: web-console/script/druid start
-      script: (cd web-console && npm run test-e2e)
-      after_script:  web-console/script/druid stop
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
 
-    - name: "docs"
-      install: (cd website && npm install)
-      script: |-
-        (cd website && npm run lint && npm run spellcheck) || { echo "
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-        If there are spell check errors:
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
 
-        1) Suppressing False Positives: Edit website/.spelling to add suppressions. Instructions
-        are at the top of the file and explain how to suppress false positives either globally or
-        within a particular file.
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
 
-        2) Running Spell Check Locally: cd website && npm install && npm run spellcheck
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
 
-        For more information, refer to: https://www.npmjs.com/package/markdown-spellcheck
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-        " && false; }
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
 
-    # Integration tests Java Compile version is set by the machine environment jdk (set by the jdk key)
-    # Integration tests Java Runtime version is set by the JVM_RUNTIME env property (set env key to -Djvm.runtime=<JVM_RUNTIME_VERSION>)
-    # (Currently integration tests only support running with jvm runtime 8 and 11)
-    # START - Integration tests for Compile with Java 8 and Run with Java 8
-    - &integration_batch_index
-      name: "(Compile=openjdk8, Run=openjdk8) batch index integration test"
-      jdk: openjdk8
-      services: &integration_test_services
-        - docker
-      env: TESTNG_GROUPS='-Dgroups=batch-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: &run_integration_test
-        - ${MVN} verify -pl integration-tests -P integration-tests ${TESTNG_GROUPS} ${JVM_RUNTIME} ${MAVEN_SKIP}
-      after_failure: &integration_test_diags
-        - for v in ~/shared/logs/*.log ; do
-          echo $v logtail ======================== ; tail -100 $v ;
-          done
-        - for v in broker middlemanager overlord router coordinator historical ; do
-          echo $v dmesg ======================== ;
-          docker exec -it druid-$v sh -c 'dmesg | tail -3' ;
-          done
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
 
-    - &integration_perfect_rollup_parallel_batch_index
-      name: "(Compile=openjdk8, Run=openjdk8) perfect rollup parallel batch index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=perfect-rollup-parallel-batch-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
 
-    - &integration_kafka_index
-      name: "(Compile=openjdk8, Run=openjdk8) kafka index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-    - &integration_kafka_index_slow
-      name: "(Compile=openjdk8, Run=openjdk8) kafka index integration test slow"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-index-slow' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
 
-    - &integration_kafka_transactional_index
-      name: "(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-transactional-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
 
-    - &integration_kafka_transactional_index_slow
-      name: "(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test slow"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-transactional-index-slow' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
 
-    - &integration_kafka_format_tests
-        name: "(Compile=openjdk8, Run=openjdk8) Kafka index integration test with various formats"
-        jdk: openjdk8
-        services: *integration_test_services
-        env: TESTNG_GROUPS='-Dgroups=kafka-data-format' JVM_RUNTIME='-Djvm.runtime=8'
-        script: *run_integration_test
-        after_failure: *integration_test_diags
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-    - &integration_query
-      name: "(Compile=openjdk8, Run=openjdk8) query integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=query' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
 
-    - &integration_security
-      name: "(Compile=openjdk8, Run=openjdk8) security integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=security' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
 
-    - &integration_realtime_index
-      name: "(Compile=openjdk8, Run=openjdk8) realtime index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=realtime-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
 
-    - &integration_tests
-      name: "(Compile=openjdk8, Run=openjdk8) other integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-DexcludedGroups=batch-index,perfect-rollup-parallel-batch-index,kafka-index,query,realtime-index,security,s3-deep-storage,gcs-deep-storage,azure-deep-storage,hdfs-deep-storage,s3-ingestion,kinesis-index,kinesis-data-format,kafka-transactional-index,kafka-index-slow,kafka-transactional-index-slow,kafka-data-format,hadoop-s3-to-s3-deep-storage,hadoop-s3-to-hdfs-deep-storage,hadoop-azure-to-azure-deep-storage,hadoop-azure-to-hdfs-deep-storage,hadoop-gcs-to-gcs-deep-storage,hadoop-gcs-to-hdfs-deep-storage,aliyun-oss-deep-storage' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
-    # END - Integration tests for Compile with Java 8 and Run with Java 8
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-    # START - Integration tests for Compile with Java 8 and Run with Java 11
-    - <<: *integration_batch_index
-      name: "(Compile=openjdk8, Run=openjdk11) batch index integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=batch-index' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
 
-    - <<: *integration_perfect_rollup_parallel_batch_index
-      name: "(Compile=openjdk8, Run=openjdk11) perfect rollup parallel batch index integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=perfect-rollup-parallel-batch-index' JVM_RUNTIME='-Djvm.runtime=11'
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
 
-    - <<: *integration_query
-      name: "(Compile=openjdk8, Run=openjdk11) query integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=query' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
 
-    - <<: *integration_security
-      name: "(Compile=openjdk8, Run=openjdk11) security integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=security' JVM_RUNTIME='-Djvm.runtime=11'
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-    - <<: *integration_realtime_index
-      name: "(Compile=openjdk8, Run=openjdk11) realtime index integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=realtime-index' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
 
-    - <<: *integration_tests
-      name: "(Compile=openjdk8, Run=openjdk11) other integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-DexcludedGroups=batch-index,perfect-rollup-parallel-batch-index,kafka-index,query,realtime-index,security,s3-deep-storage,gcs-deep-storage,azure-deep-storage,hdfs-deep-storage,s3-ingestion,kinesis-index,kinesis-data-format,kafka-transactional-index,kafka-index-slow,kafka-transactional-index-slow,kafka-data-format,hadoop-s3-to-s3-deep-storage,hadoop-s3-to-hdfs-deep-storage,hadoop-azure-to-azure-deep-storage,hadoop-azure-to-hdfs-deep-storage,hadoop-gcs-to-gcs-deep-storage,hadoop-gcs-to-hdfs-deep-storage,aliyun-oss-deep-storage' JVM_RUNTIME='-Djvm.runtime=11'
-    # END - Integration tests for Compile with Java 8 and Run with Java 11
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
 
-    - name: "security vulnerabilities"
-      stage: cron
-      install: skip
-      script: |-
-        ${MVN} dependency-check:check || { echo "
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
 
-        The OWASP dependency check has found security vulnerabilities. Please use a newer version
-        of the dependency that does not have vulnerabilities. If the analysis has false positives,
-        they can be suppressed by adding entries to owasp-dependency-check-suppressions.xml (for more
-        information, see https://jeremylong.github.io/DependencyCheck/general/suppression.html).
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
-        " && false; }
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
+
+    - &test_server_module
+      <<: *test_processing_module
+      name: "(openjdk8) server module test"
+      env:
+        - MAVEN_PROJECTS='server'
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test"
+      jdk: openjdk11
+
+    - &test_server_module_sqlcompat
+      <<: *test_server_module
+      name: "(openjdk8) server module test (SQL Compatibility)"
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility)"
+      jdk: openjdk11
 
 # Travis CI only supports per build (and not per-job notifications): https://github.com/travis-ci/travis-ci/issues/9888
 notifications:
