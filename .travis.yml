@@ -232,7 +232,7 @@ jobs:
       jdk: openjdk11
 
     - <<: *test_server_module_sqlcompat
-      name: "(openjdk8) server module test (SQL Compatibility) 2"
+      name: "(openjdk8) server module test (SQL Compatibility) 2x"
 
     - <<: *test_server_module_sqlcompat
       name: "(openjdk11) server module test (SQL Compatibility) 2"
