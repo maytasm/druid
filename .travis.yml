@@ -136,7 +136,7 @@ jobs:
     - &test_processing_module
       name: "(openjdk8) processing module test"
       env:
-      - MAVEN_PROJECTS='processing'
+        - MAVEN_PROJECTS='processing'
       before_script:
         - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=true
       script:
@@ -190,39 +190,6 @@ jobs:
         - travis_retry curl -o codecov.sh -s https://codecov.io/bash
         - travis_retry bash codecov.sh -X gcov
 
-    - <<: *test_processing_module
-      name: "(openjdk11) processing module test"
-      jdk: openjdk11
-
-    - &test_processing_module_sqlcompat
-      <<: *test_processing_module
-      name: "(openjdk8) processing module test (SQL Compatibility)"
-      before_script: &setup_sqlcompat
-      - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
-
-    - <<: *test_processing_module_sqlcompat
-      name: "(openjdk11) processing module test (SQL Compatibility)"
-      jdk: openjdk11
-
-    - &test_indexing_module
-      <<: *test_processing_module
-      name: "(openjdk8) indexing modules test"
-      env:
-      - MAVEN_PROJECTS='indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service'
-
-    - <<: *test_indexing_module
-      name: "(openjdk11) indexing modules test"
-      jdk: openjdk11
-
-    - &test_indexing_module_sqlcompat
-      <<: *test_indexing_module
-      name: "(openjdk8) indexing modules test (SQL Compatibility)"
-      before_script: *setup_sqlcompat
-
-    - <<: *test_indexing_module_sqlcompat
-      name: "(openjdk11) indexing modules test (SQL Compatibility)"
-      jdk: openjdk11
-
     - &test_server_module
       <<: *test_processing_module
       name: "(openjdk8) server module test"
@@ -236,222 +203,1414 @@ jobs:
     - &test_server_module_sqlcompat
       <<: *test_server_module
       name: "(openjdk8) server module test (SQL Compatibility)"
-      before_script: *setup_sqlcompat
+      before_script: &setup_sqlcompat
+        - export DRUID_USE_DEFAULT_VALUE_FOR_NULL=false
 
     - <<: *test_server_module_sqlcompat
       name: "(openjdk11) server module test (SQL Compatibility)"
       jdk: openjdk11
 
-    - &test_other_modules
-      <<: *test_processing_module
-      name: "(openjdk8) other modules test"
-      env:
-        - MAVEN_PROJECTS='!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console'
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 1"
 
-    - <<: *test_other_modules
-      name: "(openjdk11) other modules test"
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 1"
       jdk: openjdk11
 
-    - &test_other_modules_sqlcompat
-      <<: *test_other_modules
-      name: "(openjdk8) other modules test (SQL Compatibility)"
-      before_script: *setup_sqlcompat
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 1"
 
-    - <<: *test_other_modules_sqlcompat
-      name: "(openjdk11) other modules test (SQL Compatibility)"
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 1"
       jdk: openjdk11
 
-    - name: "web console"
-      install: skip
-      script:
-        - ${MVN} test -pl 'web-console'
-      after_success:
-        - (cd web-console && travis_retry npm run codecov)  # retry in case of network error
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 2"
 
-    - name: "web console end-to-end test"
-      before_install: *setup_generate_license
-      install: web-console/script/druid build
-      before_script: web-console/script/druid start
-      script: (cd web-console && npm run test-e2e)
-      after_script:  web-console/script/druid stop
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 2"
+      jdk: openjdk11
 
-    - name: "docs"
-      install: (cd website && npm install)
-      script: |-
-        (cd website && npm run lint && npm run spellcheck) || { echo "
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 2"
 
-        If there are spell check errors:
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 2"
+      jdk: openjdk11
 
-        1) Suppressing False Positives: Edit website/.spelling to add suppressions. Instructions
-        are at the top of the file and explain how to suppress false positives either globally or
-        within a particular file.
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 3"
 
-        2) Running Spell Check Locally: cd website && npm install && npm run spellcheck
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 3"
+      jdk: openjdk11
 
-        For more information, refer to: https://www.npmjs.com/package/markdown-spellcheck
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 3"
 
-        " && false; }
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 3"
+      jdk: openjdk11
 
-    # Integration tests Java Compile version is set by the machine environment jdk (set by the jdk key)
-    # Integration tests Java Runtime version is set by the JVM_RUNTIME env property (set env key to -Djvm.runtime=<JVM_RUNTIME_VERSION>)
-    # (Currently integration tests only support running with jvm runtime 8 and 11)
-    # START - Integration tests for Compile with Java 8 and Run with Java 8
-    - &integration_batch_index
-      name: "(Compile=openjdk8, Run=openjdk8) batch index integration test"
-      jdk: openjdk8
-      services: &integration_test_services
-        - docker
-      env: TESTNG_GROUPS='-Dgroups=batch-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: &run_integration_test
-        - ${MVN} verify -pl integration-tests -P integration-tests ${TESTNG_GROUPS} ${JVM_RUNTIME} ${MAVEN_SKIP}
-      after_failure: &integration_test_diags
-        - for v in ~/shared/logs/*.log ; do
-          echo $v logtail ======================== ; tail -100 $v ;
-          done
-        - for v in broker middlemanager overlord router coordinator historical ; do
-          echo $v dmesg ======================== ;
-          docker exec -it druid-$v sh -c 'dmesg | tail -3' ;
-          done
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 4"
 
-    - &integration_input_format
-      name: "(Compile=openjdk8, Run=openjdk8) input format integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=input-format' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 4"
+      jdk: openjdk11
 
-    - &integration_perfect_rollup_parallel_batch_index
-      name: "(Compile=openjdk8, Run=openjdk8) perfect rollup parallel batch index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=perfect-rollup-parallel-batch-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 4"
 
-    - &integration_kafka_index
-      name: "(Compile=openjdk8, Run=openjdk8) kafka index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 4"
+      jdk: openjdk11
 
-    - &integration_kafka_index_slow
-      name: "(Compile=openjdk8, Run=openjdk8) kafka index integration test slow"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-index-slow' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 5"
 
-    - &integration_kafka_transactional_index
-      name: "(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-transactional-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 5"
+      jdk: openjdk11
 
-    - &integration_kafka_transactional_index_slow
-      name: "(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test slow"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=kafka-transactional-index-slow' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 5"
 
-    - &integration_kafka_format_tests
-        name: "(Compile=openjdk8, Run=openjdk8) Kafka index integration test with various formats"
-        jdk: openjdk8
-        services: *integration_test_services
-        env: TESTNG_GROUPS='-Dgroups=kafka-data-format' JVM_RUNTIME='-Djvm.runtime=8'
-        script: *run_integration_test
-        after_failure: *integration_test_diags
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 5"
+      jdk: openjdk11
 
-    - &integration_query
-      name: "(Compile=openjdk8, Run=openjdk8) query integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=query' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 6"
 
-    - &integration_security
-      name: "(Compile=openjdk8, Run=openjdk8) security integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=security' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 6"
+      jdk: openjdk11
 
-    - &integration_realtime_index
-      name: "(Compile=openjdk8, Run=openjdk8) realtime index integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-Dgroups=realtime-index' JVM_RUNTIME='-Djvm.runtime=8'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 6"
 
-    - &integration_tests
-      name: "(Compile=openjdk8, Run=openjdk8) other integration test"
-      jdk: openjdk8
-      services: *integration_test_services
-      env: TESTNG_GROUPS='-DexcludedGroups=batch-index,input-format,perfect-rollup-parallel-batch-index,kafka-index,query,realtime-index,security,s3-deep-storage,gcs-deep-storage,azure-deep-storage,hdfs-deep-storage,s3-ingestion,kinesis-index,kinesis-data-format,kafka-transactional-index,kafka-index-slow,kafka-transactional-index-slow,kafka-data-format,hadoop-s3-to-s3-deep-storage,hadoop-s3-to-hdfs-deep-storage,hadoop-azure-to-azure-deep-storage,hadoop-azure-to-hdfs-deep-storage,hadoop-gcs-to-gcs-deep-storage,hadoop-gcs-to-hdfs-deep-storage,aliyun-oss-deep-storage' JVM_RUNTIME='-Djvm.runtime=11'
-      script: *run_integration_test
-      after_failure: *integration_test_diags
-    # END - Integration tests for Compile with Java 8 and Run with Java 8
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 6"
+      jdk: openjdk11
 
-    # START - Integration tests for Compile with Java 8 and Run with Java 11
-    - <<: *integration_batch_index
-      name: "(Compile=openjdk8, Run=openjdk11) batch index integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=batch-index' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 7"
 
-    - <<: *integration_input_format
-      name: "(Compile=openjdk8, Run=openjdk11) input format integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=input-format' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 7"
+      jdk: openjdk11
 
-    - <<: *integration_perfect_rollup_parallel_batch_index
-      name: "(Compile=openjdk8, Run=openjdk11) perfect rollup parallel batch index integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=perfect-rollup-parallel-batch-index' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 7"
 
-    - <<: *integration_query
-      name: "(Compile=openjdk8, Run=openjdk11) query integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=query' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 7"
+      jdk: openjdk11
 
-    - <<: *integration_security
-      name: "(Compile=openjdk8, Run=openjdk11) security integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=security' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 8"
 
-    - <<: *integration_realtime_index
-      name: "(Compile=openjdk8, Run=openjdk11) realtime index integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-Dgroups=realtime-index' JVM_RUNTIME='-Djvm.runtime=11'
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 8"
+      jdk: openjdk11
 
-    - <<: *integration_tests
-      name: "(Compile=openjdk8, Run=openjdk11) other integration test"
-      jdk: openjdk8
-      env: TESTNG_GROUPS='-DexcludedGroups=batch-index,input-format,perfect-rollup-parallel-batch-index,kafka-index,query,realtime-index,security,s3-deep-storage,gcs-deep-storage,azure-deep-storage,hdfs-deep-storage,s3-ingestion,kinesis-index,kinesis-data-format,kafka-transactional-index,kafka-index-slow,kafka-transactional-index-slow,kafka-data-format,hadoop-s3-to-s3-deep-storage,hadoop-s3-to-hdfs-deep-storage,hadoop-azure-to-azure-deep-storage,hadoop-azure-to-hdfs-deep-storage,hadoop-gcs-to-gcs-deep-storage,hadoop-gcs-to-hdfs-deep-storage,aliyun-oss-deep-storage' JVM_RUNTIME='-Djvm.runtime=11'
-    # END - Integration tests for Compile with Java 8 and Run with Java 11
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 8"
 
-    - name: "security vulnerabilities"
-      stage: cron
-      install: skip
-      script: |-
-        ${MVN} dependency-check:check || { echo "
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 8"
+      jdk: openjdk11
 
-        The OWASP dependency check has found security vulnerabilities. Please use a newer version
-        of the dependency that does not have vulnerabilities. If the analysis has false positives,
-        they can be suppressed by adding entries to owasp-dependency-check-suppressions.xml (for more
-        information, see https://jeremylong.github.io/DependencyCheck/general/suppression.html).
+    - <<: *test_server_module
+      name: "(openjdk8) server module test 9"
 
-        " && false; }
+    - <<: *test_server_module
+      name: "(openjdk11) server module test 9"
+      jdk: openjdk11
 
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) 9"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) 9"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x20"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x20"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x20"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x20"
+      jdk: openjdk11
+      
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x21"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x21"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x21"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x21"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x22"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x22"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x22"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x22"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x23"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x23"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x23"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x23"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x24"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x24"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x24"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x24"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x25"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x25"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x25"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x25"
+      jdk: openjdk11
+      
+      
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x26"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x26"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x26"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x26"
+      jdk: openjdk11
+      
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x27"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x27"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x27"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x27"
+      jdk: openjdk11
+      
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x28"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x28"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x28"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x28"
+      jdk: openjdk11      
+      
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x29"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x29"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x29"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x29"
+      jdk: openjdk11
+      
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x30"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x30"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x30"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x30"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x31"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x31"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x31"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x31"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x32"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x32"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x32"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x32"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x33"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x33"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x33"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x33"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x34"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x34"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x34"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x34"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x35"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x35"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x35"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x35"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x36"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x36"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x36"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x36"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x37"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x37"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x37"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x37"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x38"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x38"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x38"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x38"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x39"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x39"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x39"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x39"
+      jdk: openjdk11
+      
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x40"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x40"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x40"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x40"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x41"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x41"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x41"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x41"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x42"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x42"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x42"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x42"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x43"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x43"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x43"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x43"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x44"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x44"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x44"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x44"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x45"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x45"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x45"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x45"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x46"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x46"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x46"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x46"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x47"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x47"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x47"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x47"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x48"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x48"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x48"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x48"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x49"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x49"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x49"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x49"
+      jdk: openjdk11
+      
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x50"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x50"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x50"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x50"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x51"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x51"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x51"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x51"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x52"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x52"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x52"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x52"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x53"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x53"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x53"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x53"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x54"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x54"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x54"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x54"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x55"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x55"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x55"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x55"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x56"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x56"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x56"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x56"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x57"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x57"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x57"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x57"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x58"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x58"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x58"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x58"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x59"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x59"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x59"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x59"
+      jdk: openjdk11
+      
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x60"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x60"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x60"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x60"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x61"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x61"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x61"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x61"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x62"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x62"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x62"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x62"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x63"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x63"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x63"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x63"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x64"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x64"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x64"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x64"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x65"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x65"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x65"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x65"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x66"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x66"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x66"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x66"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x67"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x67"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x67"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x67"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x68"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x68"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x68"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x68"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x69"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x69"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x69"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x69"
+      jdk: openjdk11
+      
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x70"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x70"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x70"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x70"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x71"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x71"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x71"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x71"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x72"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x72"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x72"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x72"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x73"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x73"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x73"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x73"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x74"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x74"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x74"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x74"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x75"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x75"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x75"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x75"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x76"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x76"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x76"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x76"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x77"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x77"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x77"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x77"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x78"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x78"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x78"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x78"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x79"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x79"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x79"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x79"
+      jdk: openjdk11
+      
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x80"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x80"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x80"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x80"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x81"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x81"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x81"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x81"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x82"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x82"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x82"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x82"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x83"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x83"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x83"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x83"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x84"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x84"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x84"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x84"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x85"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x85"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x85"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x85"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x86"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x86"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x86"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x86"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x87"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x87"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x87"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x87"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x88"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x88"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x88"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x88"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x89"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x89"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x89"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x89"
+      jdk: openjdk11
+      
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x90"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x90"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x90"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x90"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x91"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x91"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x91"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x91"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x92"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x92"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x92"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x92"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x93"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x93"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x93"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x93"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x94"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x94"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x94"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x94"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x95"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x95"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x95"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x95"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x96"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x96"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x96"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x96"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x97"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x97"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x97"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x97"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x98"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x98"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x98"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x98"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x99"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x99"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x99"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x99"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x10"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x10"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x10"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x10"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x11"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x11"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x11"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x11"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x12"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x12"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x12"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x12"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x13"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x13"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x13"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x13"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x14"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x14"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x14"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x14"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x15"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x15"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x15"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x15"
+      jdk: openjdk11
+
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x16"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x16"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x16"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x16"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x17"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x17"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x17"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x17"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x18"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x18"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x18"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x18"
+      jdk: openjdk11
+
+    - <<: *test_server_module
+      name: "(openjdk8) server module test x19"
+
+    - <<: *test_server_module
+      name: "(openjdk11) server module test x19"
+      jdk: openjdk11
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk8) server module test (SQL Compatibility) x19"
+
+    - <<: *test_server_module_sqlcompat
+      name: "(openjdk11) server module test (SQL Compatibility) x19"
+      jdk: openjdk11
+      
 # Travis CI only supports per build (and not per-job notifications): https://github.com/travis-ci/travis-ci/issues/9888
 notifications:
   email:

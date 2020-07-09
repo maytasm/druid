@@ -517,7 +517,7 @@ public class JettyTest extends BaseJettyTest
       Thread.sleep(sleepTimeMills);
     }
     if (jsm.getActiveConnections() > 0) {
-      throw new RuntimeException("Connections greater than 0");
+      throw new RuntimeException("Connections greater than 0. port=" + port);
     }
   }
 }
