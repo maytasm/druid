@@ -41,6 +41,7 @@ public abstract class SeekableStreamIndexTaskTuningConfig implements Appenderato
   private final AppendableIndexSpec appendableIndexSpec;
   private final int maxRowsInMemory;
   private final long maxBytesInMemory;
+  private final int maxBytesInMemoryPercent;
   private final DynamicPartitionsSpec partitionsSpec;
   private final Period intermediatePersistPeriod;
   private final File basePersistDirectory;
@@ -64,6 +65,7 @@ public abstract class SeekableStreamIndexTaskTuningConfig implements Appenderato
       @Nullable AppendableIndexSpec appendableIndexSpec,
       @Nullable Integer maxRowsInMemory,
       @Nullable Long maxBytesInMemory,
+      @Nullable Integer maxBytesInMemoryPercent,
       @Nullable Integer maxRowsPerSegment,
       @Nullable Long maxTotalRows,
       @Nullable Period intermediatePersistPeriod,
@@ -93,6 +95,7 @@ public abstract class SeekableStreamIndexTaskTuningConfig implements Appenderato
     // initializing this to 0, it will be lazily initialized to a value
     // @see #getMaxBytesInMemoryOrDefault()
     this.maxBytesInMemory = maxBytesInMemory == null ? 0 : maxBytesInMemory;
+    this.maxBytesInMemoryPercent = maxBytesInMemoryPercent == null ? 100 : maxBytesInMemoryPercent;
     this.intermediatePersistPeriod = intermediatePersistPeriod == null
                                      ? defaults.getIntermediatePersistPeriod()
                                      : intermediatePersistPeriod;
@@ -153,6 +156,13 @@ public abstract class SeekableStreamIndexTaskTuningConfig implements Appenderato
   public long getMaxBytesInMemory()
   {
     return maxBytesInMemory;
+  }
+
+  @Override
+  @JsonProperty
+  public int getMaxBytesInMemoryPercent()
+  {
+    return maxBytesInMemoryPercent;
   }
 
   @Override

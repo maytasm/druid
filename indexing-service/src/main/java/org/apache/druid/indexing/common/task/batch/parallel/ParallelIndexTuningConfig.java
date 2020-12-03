@@ -99,6 +99,7 @@ public class ParallelIndexTuningConfig extends IndexTuningConfig
         null,
         null,
         null,
+        null,
         null
     );
   }
@@ -110,6 +111,7 @@ public class ParallelIndexTuningConfig extends IndexTuningConfig
       @JsonProperty("appendableIndexSpec") @Nullable AppendableIndexSpec appendableIndexSpec,
       @JsonProperty("maxRowsInMemory") @Nullable Integer maxRowsInMemory,
       @JsonProperty("maxBytesInMemory") @Nullable Long maxBytesInMemory,
+      @JsonProperty("maxBytesInMemoryPercent") @Nullable Integer maxBytesInMemoryPercent,
       @JsonProperty("maxTotalRows") @Deprecated @Nullable Long maxTotalRows,
       @JsonProperty("numShards") @Deprecated @Nullable Integer numShards,
       @JsonProperty("splitHintSpec") @Nullable SplitHintSpec splitHintSpec,
@@ -140,6 +142,7 @@ public class ParallelIndexTuningConfig extends IndexTuningConfig
         appendableIndexSpec,
         maxRowsInMemory,
         maxBytesInMemory,
+        maxBytesInMemoryPercent,
         maxTotalRows,
         null,
         numShards,
@@ -255,6 +258,7 @@ public class ParallelIndexTuningConfig extends IndexTuningConfig
         getAppendableIndexSpec(),
         getMaxRowsInMemory(),
         getMaxBytesInMemory(),
+        getMaxBytesInMemoryPercent(),
         null,
         null,
         getSplitHintSpec(),

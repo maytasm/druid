@@ -60,6 +60,7 @@ public class HadoopTuningConfig implements TuningConfig
         DEFAULT_APPENDABLE_INDEX,
         DEFAULT_ROW_FLUSH_BOUNDARY,
         0L,
+        100,
         false,
         true,
         false,
@@ -88,6 +89,7 @@ public class HadoopTuningConfig implements TuningConfig
   private final AppendableIndexSpec appendableIndexSpec;
   private final int rowFlushBoundary;
   private final long maxBytesInMemory;
+  private final int maxBytesInMemoryPercent;
   private final boolean leaveIntermediate;
   private final boolean cleanupOnFailure;
   private final boolean overwriteFiles;
@@ -114,6 +116,7 @@ public class HadoopTuningConfig implements TuningConfig
       final @JsonProperty("appendableIndexSpec") @Nullable AppendableIndexSpec appendableIndexSpec,
       final @JsonProperty("maxRowsInMemory") @Nullable Integer maxRowsInMemory,
       final @JsonProperty("maxBytesInMemory") @Nullable Long maxBytesInMemory,
+      final @JsonProperty("maxBytesInMemoryPercent") @Nullable Integer maxBytesInMemoryPercent,
       final @JsonProperty("leaveIntermediate") boolean leaveIntermediate,
       final @JsonProperty("cleanupOnFailure") @Nullable Boolean cleanupOnFailure,
       final @JsonProperty("overwriteFiles") boolean overwriteFiles,
@@ -148,6 +151,7 @@ public class HadoopTuningConfig implements TuningConfig
     // initializing this to 0, it will be lazily initialized to a value
     // @see #getMaxBytesInMemoryOrDefault()
     this.maxBytesInMemory = maxBytesInMemory == null ? 0 : maxBytesInMemory;
+    this.maxBytesInMemoryPercent = maxBytesInMemoryPercent == null ? 100 : maxBytesInMemoryPercent;
     this.leaveIntermediate = leaveIntermediate;
     this.cleanupOnFailure = cleanupOnFailure == null ? true : cleanupOnFailure;
     this.overwriteFiles = overwriteFiles;
@@ -234,6 +238,13 @@ public class HadoopTuningConfig implements TuningConfig
   public long getMaxBytesInMemory()
   {
     return maxBytesInMemory;
+  }
+
+  @JsonProperty
+  @Override
+  public int getMaxBytesInMemoryPercent()
+  {
+    return maxBytesInMemoryPercent;
   }
 
   @JsonProperty
@@ -343,6 +354,7 @@ public class HadoopTuningConfig implements TuningConfig
         appendableIndexSpec,
         rowFlushBoundary,
         maxBytesInMemory,
+        maxBytesInMemoryPercent,
         leaveIntermediate,
         cleanupOnFailure,
         overwriteFiles,
@@ -374,6 +386,7 @@ public class HadoopTuningConfig implements TuningConfig
         appendableIndexSpec,
         rowFlushBoundary,
         maxBytesInMemory,
+        maxBytesInMemoryPercent,
         leaveIntermediate,
         cleanupOnFailure,
         overwriteFiles,
@@ -405,6 +418,7 @@ public class HadoopTuningConfig implements TuningConfig
         appendableIndexSpec,
         rowFlushBoundary,
         maxBytesInMemory,
+        maxBytesInMemoryPercent,
         leaveIntermediate,
         cleanupOnFailure,
         overwriteFiles,

@@ -68,6 +68,7 @@ public class RealtimeTuningConfig implements AppenderatorConfig
         DEFAULT_APPENDABLE_INDEX,
         DEFAULT_MAX_ROWS_IN_MEMORY,
         0L,
+        100,
         DEFAULT_INTERMEDIATE_PERSIST_PERIOD,
         DEFAULT_WINDOW_PERIOD,
         basePersistDirectory == null ? createNewBasePersistDirectory() : basePersistDirectory,
@@ -91,6 +92,7 @@ public class RealtimeTuningConfig implements AppenderatorConfig
   private final AppendableIndexSpec appendableIndexSpec;
   private final int maxRowsInMemory;
   private final long maxBytesInMemory;
+  private final int maxBytesInMemoryPercent;
   private final Period intermediatePersistPeriod;
   private final Period windowPeriod;
   private final File basePersistDirectory;
@@ -115,6 +117,7 @@ public class RealtimeTuningConfig implements AppenderatorConfig
       @JsonProperty("appendableIndexSpec") @Nullable AppendableIndexSpec appendableIndexSpec,
       @JsonProperty("maxRowsInMemory") Integer maxRowsInMemory,
       @JsonProperty("maxBytesInMemory") Long maxBytesInMemory,
+      @JsonProperty("maxBytesInMemoryPercent") Integer maxBytesInMemoryPercent,
       @JsonProperty("intermediatePersistPeriod") Period intermediatePersistPeriod,
       @JsonProperty("windowPeriod") Period windowPeriod,
       @JsonProperty("basePersistDirectory") File basePersistDirectory,
@@ -140,6 +143,7 @@ public class RealtimeTuningConfig implements AppenderatorConfig
     // initializing this to 0, it will be lazily initialized to a value
     // @see #getMaxBytesInMemoryOrDefault()
     this.maxBytesInMemory = maxBytesInMemory == null ? 0 : maxBytesInMemory;
+    this.maxBytesInMemoryPercent = maxBytesInMemoryPercent == null ? 100 : maxBytesInMemoryPercent;
     this.intermediatePersistPeriod = intermediatePersistPeriod == null
                                      ? DEFAULT_INTERMEDIATE_PERSIST_PERIOD
                                      : intermediatePersistPeriod;
@@ -189,6 +193,13 @@ public class RealtimeTuningConfig implements AppenderatorConfig
   public long getMaxBytesInMemory()
   {
     return maxBytesInMemory;
+  }
+
+  @Override
+  @JsonProperty
+  public int getMaxBytesInMemoryPercent()
+  {
+    return maxBytesInMemoryPercent;
   }
 
   @Override
@@ -318,6 +329,7 @@ public class RealtimeTuningConfig implements AppenderatorConfig
         appendableIndexSpec,
         maxRowsInMemory,
         maxBytesInMemory,
+        maxBytesInMemoryPercent,
         intermediatePersistPeriod,
         windowPeriod,
         basePersistDirectory,
@@ -345,6 +357,7 @@ public class RealtimeTuningConfig implements AppenderatorConfig
         appendableIndexSpec,
         maxRowsInMemory,
         maxBytesInMemory,
+        maxBytesInMemoryPercent,
         intermediatePersistPeriod,
         windowPeriod,
         dir,

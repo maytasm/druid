@@ -56,6 +56,7 @@ public class RealtimeAppenderatorTuningConfig implements AppenderatorConfig
   private final AppendableIndexSpec appendableIndexSpec;
   private final int maxRowsInMemory;
   private final long maxBytesInMemory;
+  private final int maxBytesInMemoryPercent;
   private final DynamicPartitionsSpec partitionsSpec;
   private final Period intermediatePersistPeriod;
   private final File basePersistDirectory;
@@ -78,6 +79,7 @@ public class RealtimeAppenderatorTuningConfig implements AppenderatorConfig
       @JsonProperty("appendableIndexSpec") @Nullable AppendableIndexSpec appendableIndexSpec,
       @JsonProperty("maxRowsInMemory") Integer maxRowsInMemory,
       @JsonProperty("maxBytesInMemory") @Nullable Long maxBytesInMemory,
+      @JsonProperty("maxBytesInMemoryPercent") @Nullable Integer maxBytesInMemoryPercent,
       @JsonProperty("maxRowsPerSegment") @Nullable Integer maxRowsPerSegment,
       @JsonProperty("maxTotalRows") @Nullable Long maxTotalRows,
       @JsonProperty("intermediatePersistPeriod") Period intermediatePersistPeriod,
@@ -100,6 +102,7 @@ public class RealtimeAppenderatorTuningConfig implements AppenderatorConfig
     // initializing this to 0, it will be lazily initialized to a value
     // @see #getMaxBytesInMemoryOrDefault()
     this.maxBytesInMemory = maxBytesInMemory == null ? 0 : maxBytesInMemory;
+    this.maxBytesInMemoryPercent = maxBytesInMemoryPercent == null ? 100 : maxBytesInMemoryPercent;
     this.partitionsSpec = new DynamicPartitionsSpec(maxRowsPerSegment, maxTotalRows);
     this.intermediatePersistPeriod = intermediatePersistPeriod == null
                                      ? DEFAULT_INTERMEDIATE_PERSIST_PERIOD
@@ -157,6 +160,13 @@ public class RealtimeAppenderatorTuningConfig implements AppenderatorConfig
   public long getMaxBytesInMemory()
   {
     return maxBytesInMemory;
+  }
+
+  @Override
+  @JsonProperty
+  public int getMaxBytesInMemoryPercent()
+  {
+    return maxBytesInMemoryPercent;
   }
 
   @Override
@@ -273,6 +283,7 @@ public class RealtimeAppenderatorTuningConfig implements AppenderatorConfig
         appendableIndexSpec,
         maxRowsInMemory,
         maxBytesInMemory,
+        maxBytesInMemoryPercent,
         partitionsSpec.getMaxRowsPerSegment(),
         partitionsSpec.getMaxTotalRows(),
         intermediatePersistPeriod,

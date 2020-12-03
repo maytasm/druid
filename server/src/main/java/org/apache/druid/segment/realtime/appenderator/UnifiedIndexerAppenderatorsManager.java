@@ -402,6 +402,12 @@ public class UnifiedIndexerAppenderatorsManager implements AppenderatorsManager
     }
 
     @Override
+    public int getMaxBytesInMemoryPercent()
+    {
+      return 100;
+    }
+
+    @Override
     public int getMaxPendingPersists()
     {
       return baseConfig.getMaxPendingPersists();

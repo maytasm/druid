@@ -1122,6 +1122,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
     private final AppendableIndexSpec appendableIndexSpec;
     private final int maxRowsInMemory;
     private final long maxBytesInMemory;
+    private final int maxBytesInMemoryPercent;
 
     // null if all partitionsSpec related params are null. see getDefaultPartitionsSpec() for details.
     @Nullable
@@ -1194,6 +1195,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
         @JsonProperty("appendableIndexSpec") @Nullable AppendableIndexSpec appendableIndexSpec,
         @JsonProperty("maxRowsInMemory") @Nullable Integer maxRowsInMemory,
         @JsonProperty("maxBytesInMemory") @Nullable Long maxBytesInMemory,
+        @JsonProperty("maxBytesInMemoryPercent") @Nullable Integer maxBytesInMemoryPercent,
         @JsonProperty("maxTotalRows") @Deprecated @Nullable Long maxTotalRows,
         @JsonProperty("rowFlushBoundary") @Deprecated @Nullable Integer rowFlushBoundary_forBackCompatibility,
         @JsonProperty("numShards") @Deprecated @Nullable Integer numShards,
@@ -1217,6 +1219,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
           appendableIndexSpec,
           maxRowsInMemory != null ? maxRowsInMemory : rowFlushBoundary_forBackCompatibility,
           maxBytesInMemory != null ? maxBytesInMemory : 0,
+          maxBytesInMemoryPercent,
           getPartitionsSpec(
               forceGuaranteedRollup == null ? DEFAULT_GUARANTEE_ROLLUP : forceGuaranteedRollup,
               partitionsSpec,
@@ -1246,13 +1249,14 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
 
     private IndexTuningConfig()
     {
-      this(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+      this(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private IndexTuningConfig(
         @Nullable AppendableIndexSpec appendableIndexSpec,
         @Nullable Integer maxRowsInMemory,
         @Nullable Long maxBytesInMemory,
+        @Nullable Integer maxBytesInMemoryPercent,
         @Nullable PartitionsSpec partitionsSpec,
         @Nullable IndexSpec indexSpec,
         @Nullable IndexSpec indexSpecForIntermediatePersists,
@@ -1272,6 +1276,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
       // initializing this to 0, it will be lazily initialized to a value
       // @see #getMaxBytesInMemoryOrDefault()
       this.maxBytesInMemory = maxBytesInMemory == null ? 0 : maxBytesInMemory;
+      this.maxBytesInMemoryPercent = maxBytesInMemoryPercent == null ? 100 : maxBytesInMemoryPercent;
       this.partitionsSpec = partitionsSpec;
       this.indexSpec = indexSpec == null ? DEFAULT_INDEX_SPEC : indexSpec;
       this.indexSpecForIntermediatePersists = indexSpecForIntermediatePersists == null ?
@@ -1309,6 +1314,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
           appendableIndexSpec,
           maxRowsInMemory,
           maxBytesInMemory,
+          maxBytesInMemoryPercent,
           partitionsSpec,
           indexSpec,
           indexSpecForIntermediatePersists,
@@ -1330,6 +1336,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
           appendableIndexSpec,
           maxRowsInMemory,
           maxBytesInMemory,
+          maxBytesInMemoryPercent,
           partitionsSpec,
           indexSpec,
           indexSpecForIntermediatePersists,
@@ -1364,6 +1371,13 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
     public long getMaxBytesInMemory()
     {
       return maxBytesInMemory;
+    }
+
+    @JsonProperty
+    @Override
+    public int getMaxBytesInMemoryPercent()
+    {
+      return maxBytesInMemoryPercent;
     }
 
     @JsonProperty

@@ -166,6 +166,7 @@ public class JobHelperTest
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 false,

@@ -49,6 +49,11 @@ public interface TuningConfig
   long getMaxBytesInMemory();
 
   /**
+   * Percent of max jvm memory use to store in memory before persisting to local storage
+   */
+  int getMaxBytesInMemoryPercent();
+
+  /**
    * Maximum number of bytes (estimated) to store in memory before persisting to local storage.
    * If getMaxBytesInMemory() returns 0, the appendable index default will be used.
    */
@@ -58,10 +63,13 @@ public interface TuningConfig
     // maxBytes to max jvm memory of the process that starts first. Instead we set the default based on
     // the actual task node's jvm memory.
     final long maxBytesInMemory = getMaxBytesInMemory();
+    final int maxBytesInMemoryPercent = getMaxBytesInMemoryPercent();
+    final long maxJvmMemory = getAppendableIndexSpec().getMaxJvmMemory();
+
     if (maxBytesInMemory > 0) {
-      return maxBytesInMemory;
+      return Math.min(maxBytesInMemory, (maxJvmMemory / maxBytesInMemoryPercent));
     } else if (maxBytesInMemory == 0) {
-      return getAppendableIndexSpec().getDefaultMaxBytesInMemory();
+      return Math.min((maxJvmMemory / 6), (maxJvmMemory / maxBytesInMemoryPercent));
     } else {
       return Long.MAX_VALUE;
     }
