@@ -218,11 +218,7 @@ public interface IndexerMetadataStorageCoordinator
    * If startMetadata and endMetadata are set, this insertion will be atomic with a compare-and-swap on dataSource
    * commit metadata.
    *
-   * If segmentsToDrop is not null and not empty, this insertion will be atomic with a insert-and-drop on inserting
-   * {@param segments} and dropping {@param segmentsToDrop}
-   *
    * @param segments       set of segments to add, must all be from the same dataSource
-   * @param segmentsToDrop set of segments to drop, must all be from the same dataSource
    * @param startMetadata  dataSource metadata pre-insert must match this startMetadata according to
    *                       {@link DataSourceMetadata#matches(DataSourceMetadata)}. If null, this insert will
    *                       not involve a metadata transaction
@@ -239,7 +235,6 @@ public interface IndexerMetadataStorageCoordinator
    */
   SegmentPublishResult announceHistoricalSegments(
       Set<DataSegment> segments,
-      Set<DataSegment> segmentsToDrop,
       @Nullable DataSourceMetadata startMetadata,
       @Nullable DataSourceMetadata endMetadata
   ) throws IOException;

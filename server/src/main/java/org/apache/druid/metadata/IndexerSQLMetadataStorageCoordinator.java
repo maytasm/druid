@@ -356,7 +356,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
   @Override
   public Set<DataSegment> announceHistoricalSegments(final Set<DataSegment> segments) throws IOException
   {
-    final SegmentPublishResult result = announceHistoricalSegments(segments, null, null, null);
+    final SegmentPublishResult result = announceHistoricalSegments(segments, null, null);
 
     // Metadata transaction cannot fail because we are not trying to do one.
     if (!result.isSuccess()) {
@@ -369,7 +369,6 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
   @Override
   public SegmentPublishResult announceHistoricalSegments(
       final Set<DataSegment> segments,
-      final Set<DataSegment> segmentsToDrop,
       @Nullable final DataSourceMetadata startMetadata,
       @Nullable final DataSourceMetadata endMetadata
   ) throws IOException
@@ -424,25 +423,6 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
 
                 if (result != DataStoreMetadataUpdateResult.SUCCESS) {
                   // Metadata was definitely not updated.
-                  transactionStatus.setRollbackOnly();
-                  definitelyNotUpdated.set(true);
-
-                  if (result == DataStoreMetadataUpdateResult.FAILURE) {
-                    throw new RuntimeException("Aborting transaction!");
-                  } else if (result == DataStoreMetadataUpdateResult.TRY_AGAIN) {
-                    throw new RetryTransactionException("Aborting transaction!");
-                  }
-                }
-              }
-
-              if (segmentsToDrop != null && !segmentsToDrop.isEmpty()) {
-                final DataStoreMetadataUpdateResult result = dropSegmentsWithHandle(
-                    handle,
-                    segmentsToDrop,
-                    dataSource
-                );
-                if (result != DataStoreMetadataUpdateResult.SUCCESS) {
-                  // Metadata store was definitely not updated.
                   transactionStatus.setRollbackOnly();
                   definitelyNotUpdated.set(true);
 
@@ -1187,7 +1167,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
    *
    * @return SUCCESS if dataSource metadata was updated from matching startMetadata to matching endMetadata, FAILURE or
    * TRY_AGAIN if it definitely was not updated. This guarantee is meant to help
-   * {@link #announceHistoricalSegments(Set, Set, DataSourceMetadata, DataSourceMetadata)}
+   * {@link #announceHistoricalSegments(Set, DataSourceMetadata, DataSourceMetadata)}
    * achieve its own guarantee.
    *
    * @throws RuntimeException if state is unknown after this call
@@ -1305,7 +1285,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
    *
    * @return SUCCESS if segment was marked unused, FAILURE or
    * TRY_AGAIN if it definitely was not updated. This guarantee is meant to help
-   * {@link #announceHistoricalSegments(Set, Set, DataSourceMetadata, DataSourceMetadata)}
+   * {@link #announceHistoricalSegments(Set, DataSourceMetadata, DataSourceMetadata)}
    * achieve its own guarantee.
    *
    * @throws RuntimeException if state is unknown after this call

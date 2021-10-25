@@ -337,7 +337,6 @@ public class SequenceMetadata<PartitionIdType, SequenceOffsetType>
     @Override
     public SegmentPublishResult publishAnnotatedSegments(
         @Nullable Set<DataSegment> mustBeNullOrEmptyOverwriteSegments,
-        @Nullable Set<DataSegment> mustBeNullOrEmptyDropSegments,
         Set<DataSegment> segmentsToPush,
         @Nullable Object commitMetadata
     ) throws IOException
@@ -346,12 +345,6 @@ public class SequenceMetadata<PartitionIdType, SequenceOffsetType>
         throw new ISE(
             "Stream ingestion task unexpectedly attempted to overwrite segments: %s",
             SegmentUtils.commaSeparatedIdentifiers(mustBeNullOrEmptyOverwriteSegments)
-        );
-      }
-      if (mustBeNullOrEmptyDropSegments != null && !mustBeNullOrEmptyDropSegments.isEmpty()) {
-        throw new ISE(
-            "Stream ingestion task unexpectedly attempted to drop segments: %s",
-            SegmentUtils.commaSeparatedIdentifiers(mustBeNullOrEmptyDropSegments)
         );
       }
       final Map commitMetaMap = (Map) Preconditions.checkNotNull(commitMetadata, "commitMetadata");
