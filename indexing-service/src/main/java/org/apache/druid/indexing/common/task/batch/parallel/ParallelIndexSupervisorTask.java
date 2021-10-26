@@ -27,9 +27,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.datasketches.hll.HllSketch;
 import org.apache.datasketches.hll.Union;
 import org.apache.datasketches.memory.Memory;
@@ -63,10 +66,12 @@ import org.apache.druid.indexing.common.task.batch.parallel.distribution.StringD
 import org.apache.druid.indexing.common.task.batch.parallel.distribution.StringSketchMerger;
 import org.apache.druid.indexing.worker.shuffle.IntermediaryDataManager;
 import org.apache.druid.java.util.common.ISE;
+import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.logger.Logger;
+import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.segment.incremental.RowIngestionMeters;
 import org.apache.druid.segment.incremental.RowIngestionMetersTotals;
 import org.apache.druid.segment.indexing.TuningConfig;
@@ -79,9 +84,12 @@ import org.apache.druid.segment.realtime.firehose.ChatHandlers;
 import org.apache.druid.server.security.Action;
 import org.apache.druid.server.security.AuthorizerMapper;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.TimelineObjectHolder;
+import org.apache.druid.timeline.VersionedIntervalTimeline;
 import org.apache.druid.timeline.partition.BuildingShardSpec;
 import org.apache.druid.timeline.partition.NumberedShardSpec;
 import org.apache.druid.timeline.partition.PartitionBoundaries;
+import org.apache.druid.timeline.partition.PartitionChunk;
 import org.apache.druid.utils.CollectionUtils;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.joda.time.DateTime;
@@ -102,6 +110,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1055,15 +1064,42 @@ public class ParallelIndexSupervisorTask extends AbstractBatchIndexTask implemen
         ingestionSchema.getDataSchema().getGranularitySpec()
     );
 
-    if (ingestionSchema.getIOConfig().isDropExisting()) {
-
-//      segmentsFoundForDrop = getUsedSegmentsWithinInterval(toolbox, getDataSource(), ingestionSchema.getDataSchema().getGranularitySpec().inputIntervals());
-    }
-
-    final TransactionalSegmentPublisher publisher = (segmentsToBeOverwritten, segmentsToPublish, commitMetadata) ->
-        toolbox.getTaskActionClient().submit(
-            SegmentTransactionalInsertAction.overwriteAction(segmentsToBeOverwritten, segmentsToPublish)
+    final TransactionalSegmentPublisher publisher = (segmentsToBeOverwritten, segmentsToPublish, commitMetadata) -> {
+      if (ingestionSchema.getIOConfig().isDropExisting()) {
+        List<Interval> intervals = ingestionSchema.getDataSchema().getGranularitySpec().inputIntervals();
+        Set<DataSegment> allSegments = SetUtils.union(
+            getUsedSegmentsWithinInterval(toolbox, getDataSource(), intervals),
+            segmentsToPublish
         );
+        VersionedIntervalTimeline<String, DataSegment> newSegmentsOnlyTimeline = VersionedIntervalTimeline.forSegments(segmentsToPublish);
+        String newVersion = newSegmentsOnlyTimeline.first().getVersion();
+        List<TimelineObjectHolder<String, DataSegment>> allSegmentHolders =
+            VersionedIntervalTimeline.forSegments(allSegments).lookupWithIncompletePartitions(Intervals.ETERNITY);
+        for (TimelineObjectHolder<String, DataSegment> allSegmentHolder : allSegmentHolders) {
+          Interval interval = allSegmentHolder.getInterval();
+          List<TimelineObjectHolder<String, DataSegment>> newSegmentHolders = newSegmentsOnlyTimeline.lookupWithIncompletePartitions(interval);
+          if (newSegmentHolders.isEmpty()) {
+            segmentsToPublish.add(
+                new DataSegment(
+                    ingestionSchema.getDataSchema().getDataSource(),
+                    interval,
+                    newVersion,
+                    ImmutableMap.of(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    null,
+                    null,
+                    0
+                )
+            );
+          }
+        }
+      }
+      return toolbox.getTaskActionClient().submit(
+          SegmentTransactionalInsertAction.overwriteAction(segmentsToBeOverwritten, segmentsToPublish)
+      );
+    };
+
     final boolean published =
         newSegments.isEmpty()
         || publisher.publishSegments(oldSegments, newSegments, annotateFunction, null).isSuccess();

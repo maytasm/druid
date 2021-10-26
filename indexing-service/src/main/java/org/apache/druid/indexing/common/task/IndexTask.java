@@ -29,9 +29,11 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.druid.data.input.FiniteFirehoseFactory;
 import org.apache.druid.data.input.FirehoseFactory;
 import org.apache.druid.data.input.FirehoseFactoryToInputSourceAdaptor;
@@ -66,6 +68,7 @@ import org.apache.druid.indexing.common.task.batch.partition.PartitionAnalysis;
 import org.apache.druid.indexing.overlord.sampler.InputSourceSampler;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
+import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.JodaUtils;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.UOE;
@@ -98,6 +101,8 @@ import org.apache.druid.segment.writeout.SegmentWriteOutMediumFactory;
 import org.apache.druid.server.security.Action;
 import org.apache.druid.server.security.AuthorizerMapper;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.TimelineObjectHolder;
+import org.apache.druid.timeline.VersionedIntervalTimeline;
 import org.apache.druid.timeline.partition.HashBasedNumberedShardSpec;
 import org.apache.druid.timeline.partition.NumberedShardSpec;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
@@ -870,14 +875,42 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
         throw new UOE("[%s] secondary partition type is not supported", partitionsSpec.getType());
     }
 
-    if (ingestionSchema.getIOConfig().isDropExisting()) {
+    final TransactionalSegmentPublisher publisher = (segmentsToBeOverwritten, segmentsToPublish, commitMetadata) -> {
+      if (ingestionSchema.getIOConfig().isDropExisting()) {
+        List<Interval> intervals = ingestionSchema.getDataSchema().getGranularitySpec().inputIntervals();
+        Set<DataSegment> allSegments = SetUtils.union(
+            getUsedSegmentsWithinInterval(toolbox, getDataSource(), intervals),
+            segmentsToPublish
+        );
+        VersionedIntervalTimeline<String, DataSegment> newSegmentsOnlyTimeline = VersionedIntervalTimeline.forSegments(segmentsToPublish);
+        String newVersion = newSegmentsOnlyTimeline.first().getVersion();
+        List<TimelineObjectHolder<String, DataSegment>> allSegmentHolders =
+            VersionedIntervalTimeline.forSegments(allSegments).lookupWithIncompletePartitions(Intervals.ETERNITY);
+        for (TimelineObjectHolder<String, DataSegment> holder : allSegmentHolders) {
+          Interval interval = holder.getInterval();
+          List<TimelineObjectHolder<String, DataSegment>> holders = newSegmentsOnlyTimeline.lookupWithIncompletePartitions(interval);
+          if (holders.isEmpty()) {
+            segmentsToPublish.add(
+                new DataSegment(
+                    ingestionSchema.getDataSchema().getDataSource(),
+                    interval,
+                    newVersion,
+                    ImmutableMap.of(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    null,
+                    null,
+                    0
+                )
+            );
+          }
+        }
+      }
+      return toolbox.getTaskActionClient()
+             .submit(SegmentTransactionalInsertAction.overwriteAction(segmentsToBeOverwritten, segmentsToPublish));
+    };
 
-//      segmentsFoundForDrop = getUsedSegmentsWithinInterval(toolbox, getDataSource(), ingestionSchema.getDataSchema().getGranularitySpec().inputIntervals());
-    }
 
-    final TransactionalSegmentPublisher publisher = (segmentsToBeOverwritten, segmentsToPublish, commitMetadata) ->
-        toolbox.getTaskActionClient()
-               .submit(SegmentTransactionalInsertAction.overwriteAction(segmentsToBeOverwritten, segmentsToPublish));
 
     String effectiveId = getContextValue(CompactionTask.CTX_KEY_APPENDERATOR_TRACKING_TASK_ID, null);
     if (effectiveId == null) {
