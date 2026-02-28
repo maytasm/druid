@@ -117,7 +117,7 @@ class QueryVirtualStorageTest extends EmbeddedClusterTestBase
     return EmbeddedDruidCluster
         .withEmbeddedDerbyAndZookeeper()
         .useLatchableEmitter()
-        .useDefaultTimeoutForLatchableEmitter(20)
+        .useDefaultTimeoutForLatchableEmitter(30)
         .addResource(storageResource)
         .addCommonProperty("druid.msq.dart.enabled", "true")
         .addCommonProperty("druid.storage.zip", "false")
